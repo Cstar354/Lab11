@@ -14,8 +14,8 @@ def load_students():
                 line = line.strip()
                 if not line:
                     continue
-                student_id = line[:3]
-                student_name = line[3:].strip()
+                student_id = line[:3]  # Assume student ID is the first 3 characters
+                student_name = line[3:].strip()  # The rest is the name
                 students[student_id] = student_name
     except FileNotFoundError:
         print("The file 'students.txt' was not found.")
@@ -74,11 +74,10 @@ def load_submissions():
 def calculate_grade(student_name):
     total_score = 0
     total_points = 0
-    found = False
 
+    # Go through all submissions and assignments
     for student_id, submission_list in submissions.items():
-        if students.get(student_id) == student_name:
-            found = True
+        if students.get(student_id, '').strip().lower() == student_name.strip().lower():  # Case insensitive comparison
             for submission in submission_list:
                 assignment_id = submission['assignment_id']
                 score = submission['score']
@@ -86,11 +85,12 @@ def calculate_grade(student_name):
                     total_score += score
                     total_points += assignments[assignment_id]['points']
 
-    if not found or total_points == 0:
+    if total_points == 0:
         print("Student or grades not found.")
         return None
 
-    return round((total_score / total_points) * 100)
+    grade_percentage = round((total_score / total_points) * 100)
+    return grade_percentage
 
 # Function to display assignment statistics
 def assignment_statistics(assignment_name):
