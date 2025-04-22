@@ -13,13 +13,23 @@ def load_students():
                 line = line.strip()
                 if not line:  # Skip empty lines
                     continue
-                # Split by comma and space, handle variations in the format
-                parts = line.split(',')  # Adjust split logic based on how the file is structured
-                if len(parts) == 2:  # Ensure line has exactly 2 parts: name and student ID
-                    name, sid = parts
-                    students[sid.strip()] = name.strip()
+                # Try to split the student ID (numeric) and name (string)
+                # We assume that the student ID is at the start and consists of digits
+                # Find where the numeric ID ends and the name begins
+                for i in range(len(line)):
+                    if line[i].isalpha():  # Start of the name (assuming all names start with a letter)
+                        student_id = line[:i].strip()
+                        student_name = line[i:].strip()
+                        break
                 else:
                     print(f"Skipping invalid line in students file: {line}")
+                    continue  # Skip this line if no valid split was found
+
+                # Save the student data (checking if ID is valid)
+                if student_id.isdigit():
+                    students[student_id] = student_name
+                else:
+                    print(f"Skipping invalid line in students file (invalid student ID): {line}")
     except FileNotFoundError:
         print("The file 'students.txt' was not found.")
     except Exception as e:
