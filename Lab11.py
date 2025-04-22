@@ -23,21 +23,24 @@ def load_students():
         print(f"Error loading students: {e}")
 
 
-def  load_assignments():
+def load_assignments():
     assignments = {}
     try:
-        with open('data/assignments.txt') as f:
-            lines = f.readlines()
-            for i in range(0, len(lines), 3):  # Process every 3 lines as a block
-                if i + 2 < len(lines):
-                    assignment_name = lines[i].strip()
-                    assignment_id = lines[i + 1].strip()
-                    points = int(lines[i + 2].strip())
-                    assignments[assignment_name] = {'id': assignment_id, 'points': points}
+        with open(os.path.join('data', 'assignments.txt')) as f:
+            lines = [line.strip() for line in f if line.strip()]  # Remove blank lines
+            for i in range(0, len(lines), 3):  # Step by 3 lines per assignment
+                if i + 2 < len(lines):  # Ensure we have a full triplet
+                    name = lines[i]
+                    aid = lines[i+1]
+                    points = int(lines[i+2])
+                    assignments[aid] = {
+                        'name': name,
+                        'points': points
+                    }
                 else:
-                    print(f"Skipping invalid lines in assignments file.")
+                    print(f"Skipping incomplete assignment block starting at line {i+1}")
     except FileNotFoundError:
-        print("Error: assignments file not found!")
+        print("assignments.txt file not found.")
     return assignments
 
 # Function to load submissions data
