@@ -1,94 +1,114 @@
+import os
 import matplotlib.pyplot as plt
 
-# Load student data
+# Store data for students and submissions
 students = {}
-with open("data/students.txt") as f:
-    for line in f:
-        line = line.strip()
-        if ',' in line:
-            name, sid = line.split(',')
-            students[name.strip()] = sid.strip()
-
-# Load assignment data
-assignments = {}
-assignment_points = {}
-with open("data/assignments.txt") as f:
-    for line in f:
-        line = line.strip()
-        if ',' in line:
-            parts = line.split(',')
-            name = parts[0].strip()
-            aid = parts[1].strip()
-            points = int(parts[2].strip())
-            assignments[name] = aid
-            assignment_points[aid] = points
-
-# Load submission data
 submissions = {}
-with open("data/submissions.txt") as f:
+
+# Read the students.txt file
+with open('data/students.txt') as f:
     for line in f:
-        line = line.strip()
-        if ',' in line:
-            parts = line.split(',')
-            if len(parts) >= 3:
-                sid = parts[0].strip()
-                aid = parts[1].strip()
-                percent = float(parts[2].strip())
-                submissions.setdefault(sid, {})[aid] = percent
+        name, sid = line.strip().split(', ')  # Split by comma
+        students[sid] = name  # Store the student ID and name in a dictionary
 
-# Display menu
-print("1. Student grade")
-print("2. Assignment statistics")
-print("3. Assignment graph")
-selection = input("\nEnter your selection: ")
+# Process the submissions folder (assumes the folder contains files for each student's assignment submissions)
+submissions_folder = 'data/submissions'
 
-# Option 1: Student grade
-if selection == "1":
-    student_name = input("What is the student's name: ").strip()
-    if student_name not in students:
-        print("Student not found")
-    else:
-        sid = students[student_name]
-        total_earned = 0
-        total_possible = 1000
-        for aid, percent in submissions[sid].items():
-            points = assignment_points.get(aid, 0)
-            total_earned += percent * points
-        final_grade = round((total_earned / total_possible) * 100)
-        print(f"{final_grade}%")
+# Iterate through each file in the folder
+for filename in os.listdir(submissions_folder):
+    student_id = filename.split('.')[0]  # Assume filename is the student ID (e.g., 12345.txt)
+    submissions[student_id] = []
+    
+    with open(os.path.join(submissions_folder, filename)) as f:
+        for line in f:
+            aid, score = line.strip().split(', ')  # Split by comma
+            score = float(score)  # Convert score to float
+            submissions[student_id].append((aid, score))  # Store each assignment and score
 
-# Option 2: Assignment statistics
-elif selection == "2":
-    assignment_name = input("What is the assignment name: ").strip()
-    if assignment_name not in assignments:
-        print("Assignment not found")
-    else:
-        aid = assignments[assignment_name]
-        scores = []
-        for sid in submissions:
-            if aid in submissions[sid]:
-                percent = submissions[sid][aid]
-                scores.append(round(percent * 100))
-        if scores:
-            print(f"Min: {min(scores)}%")
-            print(f"Avg: {sum(scores) // len(scores)}%")
-            print(f"Max: {max(scores)}%")
+# Function to calculate a student's grade
+def calculate_student_grade(sid):
+    if sid not in submissions:
+        return "Student not found"
+    
+    total_score = sum(score for _, score in submissions[sid])
+    return round(total_score)
 
-# Option 3: Assignment graph
-elif selection == "3":
-    assignment_name = input("What is the assignment name: ").strip()
-    if assignment_name not in assignments:
-        print("Assignment not found")
-    else:
-        aid = assignments[assignment_name]
-        scores = []
-        for sid in submissions:
-            if aid in submissions[sid]:
-                percent = submissions[sid][aid]
-                scores.append(round(percent * 100))
-        if scores:
-            plt.hist(scores, bins=[0, 25, 50, 75, 100])
-            plt.title(f"{assignment_name} Score Distribution")
-            plt.xlabel("Score (%)")
-            plt.ylabel("Number of Students")
-            plt.show()
+# Function to get assignment statistics
+def assignment_statistics(aid):
+    scores = []
+    
+    for sid in submissions:
+        for submission in submissions[sid]:
+            if submission[0] == aid:
+                scores.append(submission[1])
+    
+    if not scores:
+        return "Assignment not found"
+    
+    min_score = min(scores)
+    max_score = max(scores)
+    avg_score = sum(scores) / len(scores)
+    
+    return f"Min: {min_score}%\nAvg: {avg_score:.2f}%\nMax: {max_score}%"
+
+# Function to plot a histogram of assignment scores
+def plot_assignment_graph(aid):
+    scores = []
+    
+    for sid in submissions:
+        for submission in submissions[sid]:
+            if submission[0] == aid:
+                scores.append(submission[1])
+    
+    if not scores:
+        return "Assignment not found"
+    
+    plt.hist(scores, bins=[0, 25, 50, 75, 100])
+    plt.title(f"Scores for {aid}")
+    plt.xlabel("Score Percentage")
+    plt.ylabel("Frequency")
+    plt.show()
+
+# Main program loop
+def main():
+    while True:
+        print("\n1. Student grade")
+        print("2. Assignment statistics")
+        print("3. Assignment graph")
+        print("4. Exit")
+
+        try:
+            selection = int(input("Enter your selection: "))
+
+            if selection == 1:
+                student_name = input("What is the student's name: ")
+                student_found = False
+                for sid, name in students.items():
+                    if name.lower() == student_name.lower():
+                        print(f"{name}'s grade: {calculate_student_grade(sid)}%")
+                        student_found = True
+                        break
+                if not student_found:
+                    print("Student not found")
+
+            elif selection == 2:
+                assignment_name = input("What is the assignment name: ")
+                print(assignment_statistics(assignment_name))
+
+            elif selection == 3:
+                assignment_name = input("What is the assignment name: ")
+                plot_assignment_graph(assignment_name)
+
+            elif selection == 4:
+                print("Exiting the program.")
+                break
+
+            else:
+                print("Invalid selection, please try again.")
+        
+        except ValueError:
+            print("Please enter a valid number.")
+
+# Run the main program
+if __name__ == "__main__":
+    main()
