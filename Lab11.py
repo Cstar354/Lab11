@@ -7,8 +7,9 @@ submissions = []
 
 with open('data/students.txt') as f:
     for line in f:
-        name, sid = line.strip().rstrip(' ',)
-        students[sid] = name
+        parts = line.strip().split(',')
+        name = ','.join(parts[:-1])  # name can have commas if needed
+        sid = parts[-1]
 
 with open('data/assignments.txt') as f:
     for line in f:
