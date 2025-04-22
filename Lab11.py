@@ -82,7 +82,6 @@ def calculate_grade(student_name):
                     total_points += assignments[assignment_id]['points']
 
     if total_points == 0:
-        print(f"Error: No valid assignments found for {student_name}")
         return None
 
     grade_percentage = round((total_score / total_points) * 100)
