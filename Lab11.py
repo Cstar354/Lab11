@@ -22,16 +22,14 @@ def load_students():
     except Exception as e:
         print(f"Error loading students: {e}")
 
-
 # Function to load assignments data
 def load_assignments():
-    global assignments
     assignments = {}
     try:
         with open(os.path.join('data', 'assignments.txt')) as f:
-            lines = [line.strip() for line in f if line.strip()]
-            for i in range(0, len(lines), 3):
-                if i + 2 < len(lines):
+            lines = [line.strip() for line in f if line.strip()]  # Remove blank lines
+            for i in range(0, len(lines), 3):  # Step by 3 lines per assignment
+                if i + 2 < len(lines):  # Ensure we have a full triplet
                     name = lines[i]
                     aid = lines[i+1]
                     points = int(lines[i+2])
@@ -43,11 +41,11 @@ def load_assignments():
                     print(f"Skipping incomplete assignment block starting at line {i+1}")
     except FileNotFoundError:
         print("assignments.txt file not found.")
+    return assignments
 
 # Function to load submissions data
 def load_submissions():
-    global submissions
-    submissions = {}
+    submissions = []
     try:
         submissions_dir = os.path.join('data', 'submissions')
         for filename in os.listdir(submissions_dir):
@@ -58,17 +56,16 @@ def load_submissions():
                         parts = line.strip().split('|')
                         if len(parts) == 3:
                             sid, aid, score = parts
-                            score = int(score)
-                            if sid not in submissions:
-                                submissions[sid] = []
-                            submissions[sid].append({
+                            submissions.append({
+                                'student_id': sid,
                                 'assignment_id': aid,
-                                'score': score
+                                'score': int(score)
                             })
                         else:
                             print(f"Skipping invalid submission line: {line.strip()}")
     except FileNotFoundError:
         print("Submissions folder not found.")
+    return submissions
 
 # Function to calculate the grade for a student
 def calculate_grade(student_name):
@@ -77,7 +74,9 @@ def calculate_grade(student_name):
 
     # Go through all submissions and assignments
     for student_id, submission_list in submissions.items():
-        if students.get(student_id, '').strip().lower() == student_name.strip().lower():  # Case insensitive comparison
+        # Match student_name to stored student name (case insensitive)
+        student_name_in_data = students.get(student_id, '').strip()
+        if student_name_in_data.lower() == student_name.strip().lower():
             for submission in submission_list:
                 assignment_id = submission['assignment_id']
                 score = submission['score']
