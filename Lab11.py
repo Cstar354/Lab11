@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 
+# Global variables to store data
 students = {}
 assignments = {}
 submissions = {}
@@ -13,21 +14,9 @@ def load_students():
                 line = line.strip()
                 if not line:
                     continue
-                # Try to split the student ID (numeric) and name (string)
-                for i in range(len(line)):
-                    if line[i].isalpha():  # Start of the name
-                        student_id = line[:i].strip()
-                        student_name = line[i:].strip()
-                        break
-                else:
-                    print(f"Skipping invalid line in students file: {line}")
-                    continue
-
-                # Save the student data
-                if student_id.isdigit():
-                    students[student_id] = student_name
-                else:
-                    print(f"Skipping invalid line in students file (invalid student ID): {line}")
+                # Split by space to separate ID and name
+                student_id, student_name = line.split(maxsplit=1)
+                students[student_id] = student_name
     except FileNotFoundError:
         print("The file 'students.txt' was not found.")
     except Exception as e:
@@ -57,7 +46,6 @@ def load_assignments():
 # Function to load submissions data
 def load_submissions():
     try:
-        # Read all submission files in the folder
         for filename in os.listdir('data/submissions'):
             if filename.endswith('.txt'):
                 with open(f'data/submissions/{filename}') as f:
@@ -70,7 +58,6 @@ def load_submissions():
                             student_id = parts[0].strip()
                             assignment_id = parts[1].strip()
                             score = float(parts[2].strip())
-                            # Store the submission data
                             submissions.setdefault(student_id, []).append({'assignment_id': assignment_id, 'score': score})
                         else:
                             print(f"Skipping invalid line in submissions file: {line}")
@@ -90,15 +77,13 @@ def calculate_grade(student_name):
             for submission in submission_list:
                 assignment_id = submission['assignment_id']
                 score = submission['score']
-                # If the assignment is found, add the score
                 if assignment_id in assignments:
                     total_score += score
                     total_points += assignments[assignment_id]['points']
 
-    # Handle the case where total_points is zero (no valid assignments)
     if total_points == 0:
         print(f"Error: No valid assignments found for {student_name}")
-        return
+        return None
 
     grade_percentage = round((total_score / total_points) * 100)
     return grade_percentage
@@ -155,6 +140,7 @@ def assignment_graph(assignment_name):
         print(f"No submissions found for assignment: {assignment_name}")
         return
 
+    # Plotting histogram using matplotlib
     plt.hist(scores, bins=[0, 25, 50, 75, 100])
     plt.xlabel('Scores')
     plt.ylabel('Number of Students')
