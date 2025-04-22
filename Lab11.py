@@ -175,9 +175,8 @@ def main():
         except ValueError:
             print("Please enter a valid option.")
 
-        exit_choice = input("Would you like to perform another action? (y/n): ").lower()
-        if exit_choice != 'y':
-            break
+        # Exit after one execution to avoid EOFError in non-interactive environments
+        break
 
 if __name__ == '__main__':
     main()
