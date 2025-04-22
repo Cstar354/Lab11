@@ -30,12 +30,16 @@ def load_assignments():
                 line = line.strip()
                 if not line:
                     continue
+                # Split by comma to separate the values
                 parts = line.split(', ')
                 if len(parts) == 3:
-                    assignment_id = parts[0].strip()
-                    assignment_name = parts[1].strip()
-                    points = int(parts[2].strip())
-                    assignments[assignment_id] = {'name': assignment_name, 'points': points}
+                    try:
+                        assignment_id = parts[0].strip()
+                        assignment_name = parts[1].strip()
+                        points = int(parts[2].strip())  # Convert points to integer
+                        assignments[assignment_id] = {'name': assignment_name, 'points': points}
+                    except ValueError as e:
+                        print(f"Skipping invalid line in assignments file: {line} - Error: {e}")
                 else:
                     print(f"Skipping invalid line in assignments file: {line}")
     except FileNotFoundError:
