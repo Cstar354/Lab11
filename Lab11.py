@@ -14,12 +14,14 @@ def load_students():
                 line = line.strip()
                 if not line:
                     continue
-                student_id, student_name = line.split(maxsplit=1)
+                student_id = line[:3]
+                student_name = line[3:].strip()
                 students[student_id] = student_name
     except FileNotFoundError:
         print("The file 'students.txt' was not found.")
     except Exception as e:
         print(f"Error loading students: {e}")
+
 
 # Function to load assignments data
 def load_assignments():
