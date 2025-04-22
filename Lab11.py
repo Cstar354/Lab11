@@ -22,30 +22,23 @@ def load_students():
     except Exception as e:
         print(f"Error loading students: {e}")
 
-# Function to load assignments data
-def load_assignments():
+
+def  load_assignments():
+    assignments = {}
     try:
         with open('data/assignments.txt') as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                # Split by comma to separate the values
-                parts = line.split(', ')
-                if len(parts) == 3:
-                    try:
-                        assignment_id = parts[0].strip()
-                        assignment_name = parts[1].strip()
-                        points = int(parts[2].strip())  # Convert points to integer
-                        assignments[assignment_id] = {'name': assignment_name, 'points': points}
-                    except ValueError as e:
-                        print(f"Skipping invalid line in assignments file: {line} - Error: {e}")
+            lines = f.readlines()
+            for i in range(0, len(lines), 3):  # Process every 3 lines as a block
+                if i + 2 < len(lines):
+                    assignment_name = lines[i].strip()
+                    assignment_id = lines[i + 1].strip()
+                    points = int(lines[i + 2].strip())
+                    assignments[assignment_name] = {'id': assignment_id, 'points': points}
                 else:
-                    print(f"Skipping invalid line in assignments file: {line}")
+                    print(f"Skipping invalid lines in assignments file.")
     except FileNotFoundError:
-        print("The file 'assignments.txt' was not found.")
-    except Exception as e:
-        print(f"Error loading assignments: {e}")
+        print("Error: assignments file not found!")
+    return assignments
 
 # Function to load submissions data
 def load_submissions():
