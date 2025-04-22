@@ -1,154 +1,186 @@
 import os
 import matplotlib.pyplot as plt
 
+# Global variables to store data
+students = {}
+assignments = {}
+submissions = {}
+
+# Function to load students data
 def load_students():
-    students = {}
     try:
         with open('data/students.txt') as f:
-            lines = f.readlines()
-            for line in lines:
-                parts = line.strip().split(', ')
-                if len(parts) == 2:
-                    name, student_id = parts
-                    students[student_id] = name
-                else:
-                    print(f"Skipping invalid line in students file: {line}")
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                # Split by space to separate ID and name
+                student_id, student_name = line.split(maxsplit=1)
+                students[student_id] = student_name
     except FileNotFoundError:
-        print("Error: students file not found!")
-    return students
+        print("The file 'students.txt' was not found.")
+    except Exception as e:
+        print(f"Error loading students: {e}")
 
+# Function to load assignments data
 def load_assignments():
-    assignments = {}
     try:
         with open('data/assignments.txt') as f:
-            lines = f.readlines()
-            for i in range(0, len(lines), 3):
-                if i + 2 < len(lines):
-                    assignment_name = lines[i].strip()
-                    assignment_id = lines[i + 1].strip()
-                    points = int(lines[i + 2].strip())
-                    assignments[assignment_name] = {'id': assignment_id, 'points': points}
-                else:
-                    print(f"Skipping invalid lines in assignments file.")
-    except FileNotFoundError:
-        print("Error: assignments file not found!")
-    return assignments
-
-def load_submissions():
-    submissions = []
-    try:
-        with open('data/submissions.txt') as f:
-            lines = f.readlines()
-            for line in lines:
-                parts = line.strip().split(', ')
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                # Split by comma to separate the values
+                parts = line.split(', ')
                 if len(parts) == 3:
-                    student_id, assignment_id, percentage = parts
-                    submissions.append((student_id, assignment_id, float(percentage)))
+                    try:
+                        assignment_id = parts[0].strip()
+                        assignment_name = parts[1].strip()
+                        points = int(parts[2].strip())  # Convert points to integer
+                        assignments[assignment_id] = {'name': assignment_name, 'points': points}
+                    except ValueError as e:
+                        print(f"Skipping invalid line in assignments file: {line} - Error: {e}")
                 else:
-                    print(f"Skipping invalid line in submissions file: {line}")
+                    print(f"Skipping invalid line in assignments file: {line}")
     except FileNotFoundError:
-        print("Error: submissions file not found!")
-    return submissions
+        print("The file 'assignments.txt' was not found.")
+    except Exception as e:
+        print(f"Error loading assignments: {e}")
 
-def calculate_student_grade(student_name, students, submissions, assignments):
-    total_points = 0
+# Function to load submissions data
+def load_submissions():
+    try:
+        for filename in os.listdir('data/submissions'):
+            if filename.endswith('.txt'):
+                with open(f'data/submissions/{filename}') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        parts = line.split(', ')
+                        if len(parts) == 3:
+                            student_id = parts[0].strip()
+                            assignment_id = parts[1].strip()
+                            score = float(parts[2].strip())
+                            submissions.setdefault(student_id, []).append({'assignment_id': assignment_id, 'score': score})
+                        else:
+                            print(f"Skipping invalid line in submissions file: {line}")
+    except FileNotFoundError:
+        print("The 'submissions' folder was not found.")
+    except Exception as e:
+        print(f"Error loading submissions: {e}")
+
+# Function to calculate the grade for a student
+def calculate_grade(student_name):
     total_score = 0
+    total_points = 0
 
-    student_id = None
-    for sid, name in students.items():
-        if name == student_name:
-            student_id = sid
-            break
-
-    if not student_id:
-        print("Student not found.")
-        return
-
-    for submission in submissions:
-        if submission[0] == student_id:
-            assignment_name = next((name for name, data in assignments.items() if data['id'] == submission[1]), None)
-            if assignment_name:
-                total_points += assignments[assignment_name]['points']
-                total_score += (submission[2] / 100) * assignments[assignment_name]['points']
+    # Go through all submissions and assignments
+    for student_id, submission_list in submissions.items():
+        if students.get(student_id) == student_name:
+            for submission in submission_list:
+                assignment_id = submission['assignment_id']
+                score = submission['score']
+                if assignment_id in assignments:
+                    total_score += score
+                    total_points += assignments[assignment_id]['points']
 
     if total_points == 0:
-        print(f"No valid assignments found for {student_name}.")
-    else:
-        grade_percentage = round((total_score / total_points) * 100)
-        print(f"{student_name}'s grade: {grade_percentage}%")
+        print(f"Error: No valid assignments found for {student_name}")
+        return None
 
-def assignment_statistics(assignment_name, assignments, submissions):
-    if assignment_name not in assignments:
-        print("Assignment not found.")
+    grade_percentage = round((total_score / total_points) * 100)
+    return grade_percentage
+
+# Function to display assignment statistics
+def assignment_statistics(assignment_name):
+    assignment_id = None
+    for aid, assignment in assignments.items():
+        if assignment['name'] == assignment_name:
+            assignment_id = aid
+            break
+
+    if not assignment_id:
+        print(f"Assignment not found: {assignment_name}")
         return
 
-    assignment_id = assignments[assignment_name]['id']
     scores = []
-
-    for submission in submissions:
-        if submission[1] == assignment_id:
-            scores.append(submission[2])
+    for student_submissions in submissions.values():
+        for submission in student_submissions:
+            if submission['assignment_id'] == assignment_id:
+                scores.append(submission['score'])
 
     if not scores:
-        print("No submissions found for this assignment.")
+        print(f"No submissions found for assignment: {assignment_name}")
         return
 
     min_score = min(scores)
-    max_score = max(scores)
     avg_score = sum(scores) / len(scores)
+    max_score = max(scores)
 
-    print(f"Min: {min_score}%")
-    print(f"Avg: {avg_score:.2f}%")
-    print(f"Max: {max_score}%")
+    print(f"Min: {min_score:.0f}%")
+    print(f"Avg: {avg_score:.0f}%")
+    print(f"Max: {max_score:.0f}%")
 
-def assignment_graph(assignment_name, assignments, submissions):
-    if assignment_name not in assignments:
-        print("Assignment not found.")
-        return
-
-    assignment_id = assignments[assignment_name]['id']
-    scores = []
-
-    for submission in submissions:
-        if submission[1] == assignment_id:
-            scores.append(submission[2])
-
-    if not scores:
-        print("No submissions found for this assignment.")
-        return
-
-    plt.hist(scores, bins=[0, 25, 50, 75, 100])
-    plt.title(f"Distribution of scores for {assignment_name}")
-    plt.xlabel('Score Percentage')
-    plt.ylabel('Number of Students')
-    plt.show()
-
-def main():
-    students = load_students()
-    assignments = load_assignments()
-    submissions = load_submissions()
-
-    while True:
-        print("1. Student grade")
-        print("2. Assignment statistics")
-        print("3. Assignment graph")
-        selection = input("Enter your selection: ")
-
-        if selection == '1':
-            student_name = input("What is the student's name: ")
-            calculate_student_grade(student_name, students, submissions, assignments)
-        elif selection == '2':
-            assignment_name = input("What is the assignment name: ")
-            assignment_statistics(assignment_name, assignments, submissions)
-        elif selection == '3':
-            assignment_name = input("What is the assignment name: ")
-            assignment_graph(assignment_name, assignments, submissions)
-        else:
-            print("Invalid selection. Please try again.")
-
-        exit_choice = input("Would you like to perform another action? (y/n): ").lower()
-        if exit_choice != 'y':
+# Function to display assignment score histogram
+def assignment_graph(assignment_name):
+    assignment_id = None
+    for aid, assignment in assignments.items():
+        if assignment['name'] == assignment_name:
+            assignment_id = aid
             break
 
-if __name__ == "__main__":
+    if not assignment_id:
+        print(f"Assignment not found: {assignment_name}")
+        return
+
+    scores = []
+    for student_submissions in submissions.values():
+        for submission in student_submissions:
+            if submission['assignment_id'] == assignment_id:
+                scores.append(submission['score'])
+
+    if not scores:
+        print(f"No submissions found for assignment: {assignment_name}")
+        return
+
+    # Plotting histogram using matplotlib
+    plt.hist(scores, bins=[0, 25, 50, 75, 100])
+    plt.xlabel('Scores')
+    plt.ylabel('Number of Students')
+    plt.title(f"Scores Distribution for {assignment_name}")
+    plt.show()
+
+# Main function to run the program
+def main():
+    load_students()
+    load_assignments()
+    load_submissions()
+
+    while True:
+        print("\n1. Student grade")
+        print("2. Assignment statistics")
+        print("3. Assignment graph")
+        try:
+            choice = int(input("Enter your selection: "))
+            if choice == 1:
+                student_name = input("What is the student's name: ")
+                grade_percentage = calculate_grade(student_name)
+                if grade_percentage is not None:
+                    print(f"{grade_percentage}%")
+            elif choice == 2:
+                assignment_name = input("What is the assignment name: ")
+                assignment_statistics(assignment_name)
+            elif choice == 3:
+                assignment_name = input("What is the assignment name: ")
+                assignment_graph(assignment_name)
+            else:
+                print("Invalid selection, try again.")
+        except ValueError:
+            print("Please enter a valid option.")
+
+        # Exit after one execution to avoid EOFError in non-interactive environments
+        break
+
+if __name__ == '__main__':
     main()
