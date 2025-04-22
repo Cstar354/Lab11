@@ -45,27 +45,27 @@ def load_assignments():
 
 # Function to load submissions data
 def load_submissions():
+    submissions = []
     try:
-        for filename in os.listdir('data/submissions'):
-            if filename.endswith('.txt'):
-                with open(f'data/submissions/{filename}') as f:
+        submissions_dir = os.path.join('data', 'submissions')
+        for filename in os.listdir(submissions_dir):
+            filepath = os.path.join(submissions_dir, filename)
+            if os.path.isfile(filepath):
+                with open(filepath) as f:
                     for line in f:
-                        line = line.strip()
-                        if not line:
-                            continue
-                        parts = line.split(', ')
+                        parts = line.strip().split('|')
                         if len(parts) == 3:
-                            student_id = parts[0].strip()
-                            assignment_id = parts[1].strip()
-                            score = float(parts[2].strip())
-                            submissions.setdefault(student_id, []).append({'assignment_id': assignment_id, 'score': score})
+                            sid, aid, score = parts
+                            submissions.append({
+                                'student_id': sid,
+                                'assignment_id': aid,
+                                'score': int(score)
+                            })
                         else:
-                            print(f"Skipping invalid line in submissions file: {line}")
+                            print(f"Skipping invalid submission line: {line.strip()}")
     except FileNotFoundError:
-        print("The 'submissions' folder was not found.")
-    except Exception as e:
-        print(f"Error loading submissions: {e}")
-
+        print("Submissions folder not found.")
+    return submissions
 # Function to calculate the grade for a student
 def calculate_grade(student_name):
     total_score = 0
